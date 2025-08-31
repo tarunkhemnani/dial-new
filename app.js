@@ -625,4 +625,37 @@
       d.style.boxShadow = 'none';
     }
   };
+  // --- Service worker registration (add near bottom of app.js) ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => {
+        console.debug('SW registered', reg);
+
+        // when there's an update waiting, we can prompt user to refresh
+        if (reg.waiting) {
+          console.debug('SW update waiting');
+          // optional: automatically activate:
+          // reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        reg.addEventListener('updatefound', () => {
+          const installing = reg.installing;
+          installing && installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // new update available (installed) while page controlled
+                console.debug('SW installed — update available');
+                // optional: show UI to user to reload and get new version
+              } else {
+                console.debug('SW installed for first time — cached for offline');
+              }
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('SW registration failed', err));
+  });
+}
+
 })();
